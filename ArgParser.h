@@ -5,15 +5,6 @@
 #include <cassert>
 
 namespace elap {
-/*    struct Command {
-        std::string name;
-        int minReq;
-        bool availMore;
-        std::vector<std::string> options;
-        int count=0;
-        Command(std::string name, int minReq, bool availMore):
-                name(std::move(name)),minReq(minReq),availMore(availMore) {}
-    };*/
     struct Param {
         char shortName;
         std::string name;
@@ -31,6 +22,19 @@ namespace elap {
         int parseError = 0;
         Param* errorParam = nullptr;
 
+        std::vector<Param*> getCommandsOrParams(bool isCommand){
+            std::vector<Param*> result;
+            for (auto &param :params)
+                if (param.count>0 && param.isCommand==isCommand)
+                    result.push_back(&param);
+            return result;
+        }
+
+        void addCommandOrParam(bool isCommand, char shortName, std::string name, int minReq, bool maxreq) {
+            if (name.empty()) name = shortName;
+            params.emplace_back(isCommand, shortName, name, minReq, maxreq);
+        }
+    public:
         Param* getParam(std::string name) { //@todo ma porownywać isCommand
             for (auto &param :params)
                 if (param.name==name) {
@@ -46,19 +50,6 @@ namespace elap {
             return nullptr;
         }
 
-        std::vector<Param*> getCommandsOrParams(bool isCommand){
-            std::vector<Param*> result;
-            for (auto &param :params)
-                if (param.count>0 && param.isCommand==isCommand)
-                    result.push_back(&param);
-            return result;
-        }
-
-        void addCommandOrParam(bool isCommand, char shortName, std::string name, int minReq, bool maxreq) {
-            if (name.empty()) name = shortName;
-            params.emplace_back(isCommand, shortName, name, minReq, maxreq);
-        }
-    public:
         void addCommand(std::string name, int minReq, bool maxreq) {
             addCommandOrParam(true, 0, name, minReq, maxreq);
         }
@@ -66,13 +57,7 @@ namespace elap {
         void addParam(char shortName, std::string name, int minReq, bool maxreq) {
             addCommandOrParam(false, shortName, name, minReq, maxreq);
         }
-        //gdy param ma availMore parametr musi być za wszystkimi komendami
-        //komenda która ma availMore powinna być za wszystkimi innymi komendami, być jedna taka
-        //łączone tylko gdy minreq = 0
-//        option nie noze zaczynac sie od-
-//
-//        handle przypadki
-//komenda tylko jedna ma opcje
+
         Param* getCommand() {
             for (auto &param :params)
                 if (param.count>0 && param.isCommand) {
@@ -116,7 +101,6 @@ namespace elap {
                                 errorParam = param;
                                 return false;
                             }
-
                             lastParam = param;
                             if (param) param->count++;
                         }
@@ -143,6 +127,11 @@ namespace elap {
                     }
                 }
             }
+            if (lastParam && lastParam->minReq>lastParam->options.size()) {
+                parseError = 2;
+                errorParam = lastParam;
+                return false;
+            }
             return true;
         }
 
@@ -158,7 +147,6 @@ namespace elap {
             }
             std::string res = buf;
             return res;
-            //mininal required parameters=0 but is only parameters
         }
     };
 }
