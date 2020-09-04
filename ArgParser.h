@@ -35,14 +35,14 @@ namespace elap {
             params.emplace_back(isCommand, shortName, name, minReq, maxreq);
         }
     public:
-        Param* getParam(std::string name) { //@todo ma porownywać isCommand
+        Param* getParam(std::string name, bool isCommand) {
             for (auto &param :params)
-                if (param.name==name) {
+                if (param.name==name && param.isCommand==isCommand) {
                     return &param;
                 }
             return nullptr;
         }
-        Param* getParam(char shortName) {//@todo tylko isCommand==false
+        Param* getParam(char shortName) {
             for (auto &param :params)
                 if (param.shortName==shortName) {
                     return &param;
@@ -89,7 +89,7 @@ namespace elap {
                     if (arg.size()>2 && arg[1]=='-')
                     {
                         std::string name = arg.substr(2);
-                        Param* param = getParam(name);
+                        Param* param = getParam(name, false);
                         lastParam = param;
                         if (param) param->count++;
                     }
@@ -113,16 +113,16 @@ namespace elap {
                                 lastParam->options.push_back(arg);
                             else {
                                 lastParam = nullptr;
-                                lastParam = getParam(arg);
+                                lastParam = getParam(arg, true);
                                 lastParam->count++;
                             }
                         } else {
                             lastParam = nullptr;
-                            lastParam = getParam(arg);
+                            lastParam = getParam(arg, true);
                             lastParam->count++;
                         }
                     } else {
-                        lastParam = getParam(arg);
+                        lastParam = getParam(arg, true);
                         lastParam->count++;
                     }
                 }
